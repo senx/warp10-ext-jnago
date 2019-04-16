@@ -14,6 +14,8 @@
 //   limitations under the License.
 //
 
+import org.apache.tools.ant.taskdefs.condition.Os;
+
 plugins {
   id 'java'
   id 'com.github.johnrengelman.shadow' version '4.0.3'
@@ -161,6 +163,11 @@ shadowJar {
    include 'io.warp10/warp10-ext-jnago/*.mc2'
    include 'io.warp10/warp10-ext-jnago/**/*.mc2'
   }
+
+  from('src/main/resources') {
+   include '**/libgolib.so'
+   include '**/libgolib.dylib'
+  }
 }
 
 shadowJar.dependsOn(test)
@@ -264,12 +271,31 @@ signing {
 // Go building
 //
 
-task compileGo(type:Exec) {
-  //workingDir '../tomcat/bin'
+def getGoTarget() {
+  def target = null
 
-  commandLine 'go','build','-buildmode=c-shared','-o','src/main/resources/linux-x86-64/libgolib.so','src/main/go/golib.go'
+  if (Os.isFamily(Os.FAMILY_MAC)) {
+    target = 'src/main/resources/darwin/libgolib.dylib'
+  } else if (Os.isFamily(Os.FAMILY_UNIX)) {
+    target = 'src/main/resources/linux-x86-64/libgolib.so'
+  } else {
+    throw new RuntimeException("Unsopported operating system.")
+  }
+
+  return target
+}
+
+task compileGo(type:Exec) {
+  commandLine 'go','build','-buildmode=c-shared','-o',getGoTarget(),'src/main/go/golib.go'
+}
+
+task cleanGo(type:Delete) {
+  delete fileTree('src/main/resources') {
+    include '**/libgolib.*'
+  }
 }
 
 jar.dependsOn compileGo
 shadowJar.dependsOn compileGo
+clean.dependsOn cleanGo
 
