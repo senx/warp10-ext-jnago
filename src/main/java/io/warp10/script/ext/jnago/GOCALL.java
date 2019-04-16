@@ -16,30 +16,23 @@
 
 package io.warp10.script.ext.jnago;
 
-import java.util.HashMap;
-import java.util.Map;
+import io.warp10.script.NamedWarpScriptFunction;
+import io.warp10.script.WarpScriptException;
+import io.warp10.script.WarpScriptStack;
+import io.warp10.script.WarpScriptStackFunction;
 
-import com.sun.jna.Native;
-
-import io.warp10.warp.sdk.WarpScriptExtension;
-
-public class JNAGoWarpScriptExtension extends WarpScriptExtension {
-  
-  private static final Map<String,Object> functions;
-  
-  public static final GoLib golib;
-  
-  static {
-    golib = (GoLib) Native.load("golib", GoLib.class);
-    
-    functions = new HashMap<String, Object>();
-    
-    functions.put("GOCALL", new GOCALL("GOCALL"));
+public class GOCALL extends NamedWarpScriptFunction implements WarpScriptStackFunction {
+  public GOCALL(String name) {
+    super(name);
   }
-  
+
   @Override
-  public Map<String, Object> getFunctions() {
-    return functions;
+  public Object apply(WarpScriptStack stack) throws WarpScriptException {
+    Object top = stack.pop();
+    
+    stack.push(JNAGoWarpScriptExtension.golib.ReturnString(String.valueOf(top)));
+    
+    return null;
   }
-
+  
 }
